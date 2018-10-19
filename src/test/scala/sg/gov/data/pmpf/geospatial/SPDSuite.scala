@@ -5,15 +5,16 @@
 
 package sg.gov.data.pmpf.geospatial
 
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
 import org.scalactic.Tolerance
-import sg.gov.data.pmpf.{SparkFunSuite, TestSparkContext}
+import sg.gov.data.pmpf.SparkFunSuite
 import sg.gov.data.pmpf.utils.{GPSLog, TimeUtils}
 
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions.{col, collect_list, lit}
-import org.apache.spark.sql.hive.test.TestHiveContext
 
 class SPDSuite extends SparkFunSuite with Tolerance
-  with TestSparkContext {
+  with DataFrameSuiteBase {
 
   test("default parameters") {
     val spd = new SPD()
@@ -44,10 +45,9 @@ class SPDSuite extends SparkFunSuite with Tolerance
   }
 
   test("spd test data full") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
-    val df = sc.textFile("src/test/data/full.csv")
+    val df = spark.sparkContext.textFile("src/test/data/full.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -101,8 +101,7 @@ class SPDSuite extends SparkFunSuite with Tolerance
   }
 
   test("spd no pois found") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val df = Seq(
       (1.0, 1.0, TimeUtils.fromISO("2016-08-01T19:30:00Z"), "Entity A"),
@@ -124,8 +123,7 @@ class SPDSuite extends SparkFunSuite with Tolerance
   }
 
   test("schema of poi dataframe") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val df = Seq(
       (1.0, 1.0, TimeUtils.fromISO("2016-08-01T19:30:00Z"), "Entity A"),

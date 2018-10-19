@@ -6,11 +6,11 @@
 package sg.gov.data.pmpf.utils
 
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions.{col, monotonically_increasing_id, rand}
-import org.apache.spark.sql.hive.HiveContext
 
 object SparkUtils {
-  def sampleDfByCol(df: DataFrame, idCol: String, n: Int = 100)(implicit hiveContext: HiveContext)
+  def sampleDfByCol(df: DataFrame, idCol: String, n: Int = 100)(implicit sqlContext: SQLContext)
     : DataFrame = {
     val RandColName = "_rand"
     val dfWithRand = df.withColumn(RandColName, rand)
@@ -28,7 +28,7 @@ object SparkUtils {
         }
       }
       .values
-    val sampledDf = hiveContext.createDataFrame(sampledRDD, schema)
+    val sampledDf = sqlContext.createDataFrame(sampledRDD, schema)
     sampledDf.drop(col(RandColName))
   }
 

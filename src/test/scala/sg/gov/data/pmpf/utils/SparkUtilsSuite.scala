@@ -5,16 +5,17 @@
 
 package sg.gov.data.pmpf.utils
 
-import sg.gov.data.pmpf.{SparkFunSuite, TestSparkContext}
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
+import sg.gov.data.pmpf.SparkFunSuite
 
-import org.apache.spark.sql.hive.test.TestHiveContext
+import org.apache.spark.sql.SQLContext
 
 class SparkUtilsSuite extends SparkFunSuite
-  with TestSparkContext {
+  with DataFrameSuiteBase {
 
   test("sample df by columns") {
-    implicit val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
+
     val sampleDf = Seq(10, 100, 1000).flatMap(x => (0 until x).map((x, _, x)))
       .toDF("id", "value1", "value2")
 
@@ -40,8 +41,7 @@ class SparkUtilsSuite extends SparkFunSuite
   }
 
   test ("split df by columns") {
-    implicit val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val columnNames = (0 until 10).map(_.toString).toArray
     val df = (0 until 10)

@@ -5,16 +5,17 @@
 
 package sg.gov.data.pmpf.geospatial
 
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
 import org.scalactic.Tolerance
-import sg.gov.data.pmpf.{SparkFunSuite, TestSparkContext}
+import sg.gov.data.pmpf.SparkFunSuite
 import sg.gov.data.pmpf.utils.{GPSLog, TimeUtils}
 
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions.collect_list
-import org.apache.spark.sql.hive.test.TestHiveContext
 
 class GeoISuite extends SparkFunSuite
   with Tolerance
-  with TestSparkContext {
+  with DataFrameSuiteBase {
 
   private val RandomSeed: Long = 31337
 
@@ -38,8 +39,7 @@ class GeoISuite extends SparkFunSuite
   }
 
   test("jitter") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val geoi = new GeoI()
       .setScale(100)
@@ -67,8 +67,7 @@ class GeoISuite extends SparkFunSuite
   }
 
   test("jitter - test data simplified") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val geoi = new GeoI()
       .setScale(100)
@@ -76,7 +75,7 @@ class GeoISuite extends SparkFunSuite
       .setLongitudeColumn("longitude")
       .setRandomSeed(RandomSeed)
 
-    val df = sc.textFile("src/test/data/simplified.csv")
+    val df = spark.sparkContext.textFile("src/test/data/simplified.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -86,7 +85,7 @@ class GeoISuite extends SparkFunSuite
     assert(jitteredDF.columns.length === 3)
     assert(df.count === jitteredDF.count)
 
-    val expectedDF = sc.textFile("src/test/data/expected/simplified_naive_100m.csv")
+    val expectedDF = spark.sparkContext.textFile("src/test/data/expected/simplified_naive_100m.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF

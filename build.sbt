@@ -7,13 +7,13 @@
 // http://www.scala-sbt.org/0.13/docs/index.html
 
 // setting spark version to match production for now
-val sparkVer = sys.props.getOrElse("spark.version", "1.6.3")
+val sparkVer = sys.props.getOrElse("spark.version", "2.1.2")
 
 val sparkBranch = sparkVer.substring(0, 3)
 val defaultScalaVer = sparkBranch match {
-  case "1.6" => "2.10.6"
-  case "2.0" => "2.11.8"
-  case "2.1" => "2.11.8"
+  case "1.6" => "2.10.7"
+  case "2.0" => "2.11.12"
+  case "2.1" => "2.11.12"
   case _ => throw new IllegalArgumentException(s"Unsupported Spark version: $sparkVer.")
 }
 val scalaVer = sys.props.getOrElse("scala.version", defaultScalaVer)
@@ -30,7 +30,7 @@ scalaVersion := scalaVer
 spName := "datagovsg/spark-geo-privacy"
 
 // Don't forget to set the version
-version := "0.1.3"
+version := "0.2"
 
 // All Spark Packages need a license
 licenses := Seq("Apache-2.0" -> url("http://opensource.org/licenses/Apache-2.0"))
@@ -45,7 +45,7 @@ sparkComponents ++= Seq("sql", "hive")
 // e.g. spDependencies += "databricks/spark-avro:0.1"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % defaultScalaTestVer % "test"
-libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "1.6.1_0.3.3" % "test"
+libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "2.1.1_0.9.0" % "test"
 
 // These versions are ancient, but they cross-compile around scala 2.10 and 2.11.
 // Update them when dropping support for scala 2.10

@@ -5,14 +5,15 @@
 
 package sg.gov.data.pmpf.geospatial
 
-import sg.gov.data.pmpf.{SparkFunSuite, TestSparkContext}
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
+import sg.gov.data.pmpf.SparkFunSuite
 
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.functions.{lit, mean}
 import org.apache.spark.sql.types._
 
 class PointRecallSuite extends SparkFunSuite
-  with TestSparkContext {
+  with DataFrameSuiteBase {
   test("default parameters") {
     val pointRecall = new PointRecall()
 
@@ -36,8 +37,7 @@ class PointRecallSuite extends SparkFunSuite
   }
 
   test("recall") {
-    val sqlContext = new SQLContext(this.sc)
-    import sqlContext.implicits._
+    import spark.sqlContext.implicits._
 
     val originalPoints = Seq(
       ("1", "103.000", "1.350"),
@@ -83,15 +83,15 @@ class PointRecallSuite extends SparkFunSuite
   }
 
   test("no recall - both dataframes empty") {
-    val sqlContext = new SQLContext(this.sc)
+    val sqlContext = spark.sqlContext
 
     val struct =
       StructType(Array(
         StructField("trajectoryId", IntegerType, true),
         StructField("longitude", DoubleType, false),
         StructField("latitude", DoubleType, false)))
-    val originalPoints = sqlContext.createDataFrame(sc.emptyRDD[Row], struct)
-    val newPoints = sqlContext.createDataFrame(sc.emptyRDD[Row], struct)
+    val originalPoints = sqlContext.createDataFrame(spark.sparkContext.emptyRDD[Row], struct)
+    val newPoints = sqlContext.createDataFrame(spark.sparkContext.emptyRDD[Row], struct)
 
     val pointRecall = new PointRecall()
       .setReferenceFrame(originalPoints)
@@ -107,21 +107,17 @@ class PointRecallSuite extends SparkFunSuite
       List("trajectoryId", "_reference_points", "_comparison_points", "_recall")
     assert(results.select("trajectoryId").count === 0)
     assert(results.columns.forall(expectedColumns.contains))
-
-    val emptyResult = results.groupBy(lit(1)).agg(mean("_recall")).first
-    assert(Option(emptyResult(1)).isEmpty)
   }
 
   test("no recall - empty comparison frame") {
-    val sqlContext = new SQLContext(this.sc)
-    import sqlContext.implicits._
+    import spark.sqlContext.implicits._
 
     val struct =
       StructType(Array(
         StructField("trajectoryId", IntegerType, true),
         StructField("longitude", DoubleType, false),
         StructField("latitude", DoubleType, false)))
-    val originalPoints = sqlContext.createDataFrame(sc.emptyRDD[Row], struct)
+    val originalPoints = sqlContext.createDataFrame(spark.sparkContext.emptyRDD[Row], struct)
 
     val newPoints = Seq(
       ("1", "103.0001", "1.3501"),
@@ -149,14 +145,10 @@ class PointRecallSuite extends SparkFunSuite
       List("trajectoryId", "_reference_points", "_comparison_points", "_recall")
     assert(results.select("trajectoryId").count === 0)
     assert(results.columns.forall(expectedColumns.contains))
-
-    val emptyResult = results.groupBy(lit(1)).agg(mean("_recall")).first
-    assert(Option(emptyResult(1)).isEmpty)
   }
 
   test("no recall - empty reference frame") {
-    val sqlContext = new SQLContext(this.sc)
-    import sqlContext.implicits._
+    import spark.sqlContext.implicits._
 
     val originalPoints = Seq(
       ("1", "103.000", "1.350"),
@@ -175,7 +167,7 @@ class PointRecallSuite extends SparkFunSuite
         StructField("trajectoryId", IntegerType, true),
         StructField("longitude", DoubleType, false),
         StructField("latitude", DoubleType, false)))
-    val newPoints = sqlContext.createDataFrame(sc.emptyRDD[Row], struct)
+    val newPoints = sqlContext.createDataFrame(spark.sparkContext.emptyRDD[Row], struct)
 
     val pointRecall = new PointRecall()
       .setReferenceFrame(originalPoints)
@@ -191,8 +183,5 @@ class PointRecallSuite extends SparkFunSuite
       List("trajectoryId", "_reference_points", "_comparison_points", "_recall")
     assert(results.select("trajectoryId").count === 0)
     assert(results.columns.forall(expectedColumns.contains))
-
-    val emptyResult = results.groupBy(lit(1)).agg(mean("_recall")).first
-    assert(Option(emptyResult(1)).isEmpty)
   }
 }

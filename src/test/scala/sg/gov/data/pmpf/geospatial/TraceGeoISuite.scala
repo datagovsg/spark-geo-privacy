@@ -9,17 +9,18 @@ import java.sql.Timestamp
 
 import scala.io.Source
 
+import com.holdenkarau.spark.testing.DataFrameSuiteBase
 import org.scalactic.Tolerance
-import sg.gov.data.pmpf.{SparkFunSuite, TestSparkContext}
+import sg.gov.data.pmpf.SparkFunSuite
 import sg.gov.data.pmpf.geospatial.budgetmanager.{BudgetManager, FixedRateBudgetManager, FixedUtilityBudgetManager, NaiveBudgetManager}
 import sg.gov.data.pmpf.utils.{GPSLog, TimeUtils}
 
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions.{col, collect_list, lit}
-import org.apache.spark.sql.hive.test.TestHiveContext
 
 class TraceGeoISuite extends SparkFunSuite
   with Tolerance
-  with TestSparkContext {
+  with DataFrameSuiteBase {
 
   private val RandomSeed: Long = 31337
 
@@ -62,8 +63,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter naive") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val naiveBudgetManager = new NaiveBudgetManager()
     val traceGeoI = new TraceGeoI()
@@ -94,8 +94,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed rate trace with only one point") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedRateBudgetManager = new FixedRateBudgetManager()
     val traceGeoI = new TraceGeoI()
@@ -132,8 +131,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed rate") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedRateBudgetManager = new FixedRateBudgetManager()
     fixedRateBudgetManager.setBudgetRate(0.0)
@@ -162,8 +160,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed utility") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedUtilityBudgetManager = new FixedUtilityBudgetManager()
     val traceGeoI = new TraceGeoI()
@@ -194,8 +191,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed utility - test data full") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedUtilityBudgetManager = new FixedUtilityBudgetManager()
     fixedUtilityBudgetManager.setUtility(50.0)
@@ -207,7 +203,7 @@ class TraceGeoISuite extends SparkFunSuite
       .setBudgetManager(fixedUtilityBudgetManager)
       .setRandomSeed(RandomSeed)
 
-    val df = sc.textFile("src/test/data/full.csv")
+    val df = spark.sparkContext.textFile("src/test/data/full.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -239,8 +235,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed utility - test data simplified") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedUtilityBudgetManager = new FixedUtilityBudgetManager()
     fixedUtilityBudgetManager.setUtility(200.0)
@@ -252,7 +247,7 @@ class TraceGeoISuite extends SparkFunSuite
       .setBudgetManager(fixedUtilityBudgetManager)
       .setRandomSeed(RandomSeed)
 
-    val df = sc.textFile("src/test/data/simplified.csv")
+    val df = spark.sparkContext.textFile("src/test/data/simplified.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -288,8 +283,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter naive - test data simplified") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val naiveBudgetManager = new NaiveBudgetManager()
     val traceGeoI = new TraceGeoI()
@@ -300,7 +294,7 @@ class TraceGeoISuite extends SparkFunSuite
       .setBudgetManager(naiveBudgetManager)
       .setRandomSeed(RandomSeed)
 
-    val df = sc.textFile("src/test/data/simplified.csv")
+    val df = spark.sparkContext.textFile("src/test/data/simplified.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -312,7 +306,7 @@ class TraceGeoISuite extends SparkFunSuite
     assert(jitteredDF.columns.sameElements(df.columns))
     assert(df.count === jitteredDF.count)
 
-    val expectedDF = sc.textFile("src/test/data/expected/simplified_naive_100m.csv")
+    val expectedDF = spark.sparkContext.textFile("src/test/data/expected/simplified_naive_100m.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
@@ -327,8 +321,7 @@ class TraceGeoISuite extends SparkFunSuite
   }
 
   test("jitter fixed utility - with extra columns") {
-    val hiveContext = new TestHiveContext(this.sc)
-    import hiveContext.implicits._
+    import spark.sqlContext.implicits._
 
     val fixedUtilityBudgetManager = new FixedUtilityBudgetManager()
     fixedUtilityBudgetManager.setUtility(200.0)
@@ -340,7 +333,7 @@ class TraceGeoISuite extends SparkFunSuite
       .setBudgetManager(fixedUtilityBudgetManager)
       .setRandomSeed(RandomSeed)
 
-    val df = sc.textFile("src/test/data/full.csv")
+    val df = spark.sparkContext.textFile("src/test/data/full.csv")
       .map(_.split(","))
       .map(d => GPSLog(TimeUtils.fromISO(d(3)), d(1).toDouble, d(0).toDouble))
       .toDF
